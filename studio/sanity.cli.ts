@@ -1,10 +1,15 @@
-import { defineCliConfig } from 'sanity/cli';
+import {defineCliConfig} from 'sanity/cli'
 
 export default defineCliConfig({
-	api: {
-		projectId: 'j2h3fv1f',
-		dataset: 'production',
-	},
-	studioHost: 'portfolio-edgar',
-	autoUpdates: true,
-});
+  api: {
+    projectId: 'errajabj',
+    dataset: 'production'
+  },
+  deployment: {
+    /**
+     * Enable auto-updates for studios.
+     * Learn more at https://www.sanity.io/docs/studio/latest-version-of-sanity#k47faf43faf56
+     */
+    autoUpdates: true,
+  },
+})

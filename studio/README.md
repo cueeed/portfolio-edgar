@@ -1,18 +1,9 @@
-# Sanity Studio — Portfolio Edgar
+# Sanity Clean Content Studio
 
-Studio standalone (template **clean**) pour le projet `j2h3fv1f` / dataset `production`.
+Congratulations, you have now installed the Sanity Content Studio, an open-source real-time content editing environment connected to the Sanity backend.
 
-```bash
-cd studio
-npm install
-npx sanity login   # une fois
-npm run dev        # http://localhost:3333
-```
+Now you can do the following things:
 
-Déploiement hébergé Sanity :
-
-```bash
-npm run deploy
-```
-
-Le site Astro utilise le **même schéma** (`studio/schemaTypes`) via `/admin` (Studio embarqué).
+- [Read “getting started” in the docs](https://www.sanity.io/docs/introduction/getting-started?utm_source=readme)
+- [Join the Sanity community](https://www.sanity.io/community/join?utm_source=readme)
+- [Extend and build plugins](https://www.sanity.io/docs/content-studio/extending?utm_source=readme)
