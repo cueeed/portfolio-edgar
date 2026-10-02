@@ -5,10 +5,10 @@ import { urlFor } from './image';
 export type ProjectCategory = 'ui' | 'branding' | 'motion' | 'web';
 
 export const categoryLabels: Record<ProjectCategory, string> = {
-	ui: 'UI',
-	branding: 'Branding',
+	ui: 'UI / Interface',
+	branding: 'Identité visuelle',
 	motion: 'Motion',
-	web: 'Web',
+	web: 'Site web',
 };
 
 export interface SanityProject {
@@ -17,7 +17,8 @@ export interface SanityProject {
 	slug: string;
 	client: string;
 	year: number;
-	category: ProjectCategory;
+	category?: ProjectCategory | null;
+	services?: string[] | null;
 	coverImage: SanityImageSource;
 	coverAlt: string;
 	shortDescription: string;
@@ -37,7 +38,7 @@ export interface ProjectCard {
 	slug: string;
 	client: string;
 	year: number;
-	category: ProjectCategory;
+	services: string[];
 	categoryLabel: string;
 	shortDescription: string;
 	coverImageUrl: string;
@@ -54,6 +55,7 @@ const projectCardFields = /* groq */ `
   client,
   year,
   category,
+  services,
   coverImage,
   "coverAlt": coalesce(coverImage.alt, title),
   shortDescription,
@@ -76,19 +78,33 @@ const projectDetailFields = /* groq */ `
   }
 `;
 
+function resolveServices(project: SanityProject): string[] {
+	if (project.services && project.services.length > 0) {
+		return project.services;
+	}
+
+	if (project.category) {
+		return [categoryLabels[project.category] ?? project.category];
+	}
+
+	return [];
+}
+
 function toCard(project: SanityProject, index: number): ProjectCard {
+	const services = resolveServices(project);
+
 	return {
 		_id: project._id,
 		title: project.title,
 		slug: project.slug,
 		client: project.client,
 		year: project.year,
-		category: project.category,
-		categoryLabel: categoryLabels[project.category] ?? project.category,
+		services,
+		categoryLabel: services.join(' · ') || '—',
 		shortDescription: project.shortDescription,
 		coverImageUrl: urlFor(project.coverImage)
-			.width(1200)
-			.height(1800)
+			.width(900)
+			.height(1400)
 			.fit('crop')
 			.auto('format')
 			.url(),

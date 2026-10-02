@@ -36,8 +36,9 @@ export const project = defineType({
     }),
     defineField({
       name: 'category',
-      title: 'Catégorie',
+      title: 'Catégorie (legacy)',
       type: 'string',
+      hidden: true,
       options: {
         list: [
           {title: 'UI', value: 'ui'},
@@ -45,9 +46,25 @@ export const project = defineType({
           {title: 'Motion', value: 'motion'},
           {title: 'Web', value: 'web'},
         ],
-        layout: 'radio',
       },
-      validation: (rule) => rule.required(),
+    }),
+    defineField({
+      name: 'services',
+      title: 'Prestations',
+      type: 'array',
+      description: 'Ce que tu as réalisé sur ce projet (identité, site, etc.).',
+      of: [{type: 'string'}],
+      options: {
+        list: [
+          {title: 'Identité visuelle', value: 'Identité visuelle'},
+          {title: 'Site web', value: 'Site web'},
+          {title: 'UI / Interface', value: 'UI / Interface'},
+          {title: 'Motion', value: 'Motion'},
+          {title: 'Branding', value: 'Branding'},
+          {title: 'Direction artistique', value: 'Direction artistique'},
+        ],
+        layout: 'grid',
+      },
     }),
     defineField({
       name: 'coverImage',
@@ -92,8 +109,8 @@ export const project = defineType({
       title: 'Description courte',
       type: 'text',
       rows: 3,
-      description: 'Résumé affiché dans la grille et sous le titre de la page détail.',
-      validation: (rule) => rule.required().max(280),
+      description: '1–2 phrases affichées dans la fiche projet.',
+      validation: (rule) => rule.required().max(220),
     }),
     defineField({
       name: 'body',

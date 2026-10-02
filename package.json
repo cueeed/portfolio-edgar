@@ -11,7 +11,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "studio": "npm run dev --prefix studio",
-    "studio:deploy": "npm run deploy --prefix studio"
+    "studio:deploy": "npm run deploy --prefix studio",
+    "seed:demo": "npm run seed:demo --prefix studio"
   },
   "dependencies": {
     "@astrojs/react": "^7.0.0",

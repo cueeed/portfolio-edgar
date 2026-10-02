@@ -1,7 +1,5 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Header from '../../components/Header.astro';
-import Footer from '../../components/Footer.astro';
 import PortableText from '../../components/PortableText.astro';
 import {
 	getProjects,
@@ -10,6 +8,7 @@ import {
 	categoryLabels,
 } from '../../lib/projects';
 import { urlFor } from '../../lib/image';
+import type { ProjectCategory } from '../../lib/projects';
 
 export async function getStaticPaths() {
 	const projects = await getProjects();
@@ -22,13 +21,13 @@ export async function getStaticPaths() {
 const { slug } = Astro.params;
 
 if (!slug) {
-	return Astro.redirect('/#projets');
+	return Astro.redirect('/');
 }
 
 const project = await getProjectBySlug(slug);
 
 if (!project) {
-	return Astro.redirect('/#projets');
+	return Astro.redirect('/');
 }
 
 const coverUrl = urlFor(project.coverImage)
@@ -38,8 +37,12 @@ const coverUrl = urlFor(project.coverImage)
 	.auto('format')
 	.url();
 
-const categoryLabel =
-	categoryLabels[project.category as keyof typeof categoryLabels] ?? project.category;
+const services =
+	project.services && project.services.length > 0
+		? project.services
+		: project.category
+			? [categoryLabels[project.category as ProjectCategory] ?? project.category]
+			: [];
 
 const gallery = (project.gallery ?? []).filter(Boolean);
 ---
@@ -48,13 +51,12 @@ const gallery = (project.gallery ?? []).filter(Boolean);
 	title={`${project.title} — Edgar`}
 	description={project.shortDescription}
 >
-	<Header />
 	<main class="project-page">
-		<article class="section project-detail">
-			<a class="project-detail__back" href="/#projets">← Projets</a>
+		<article class="project-detail">
+			<a class="project-detail__back" href="/">← Projets</a>
 
 			<p class="project-detail__meta">
-				{project.client} · {project.year} · {categoryLabel}
+				{[project.client, project.year, services.join(' · ')].filter(Boolean).join(' · ')}
 			</p>
 			<h1 class="project-detail__title">{project.title}</h1>
 			<p class="project-detail__lead">{project.shortDescription}</p>
@@ -63,7 +65,7 @@ const gallery = (project.gallery ?? []).filter(Boolean);
 				project.externalUrl && (
 					<p class="project-detail__external">
 						<a href={project.externalUrl} target="_blank" rel="noopener noreferrer">
-							Voir le projet en ligne
+							Voir le site ↗
 						</a>
 					</p>
 				)
@@ -104,5 +106,4 @@ const gallery = (project.gallery ?? []).filter(Boolean);
 			}
 		</article>
 	</main>
-	<Footer />
 </BaseLayout>
