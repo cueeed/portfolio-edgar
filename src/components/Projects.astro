@@ -1,7 +1,7 @@
 ---
-import { getProjects } from '../lib/projects';
+import { getHomepageProjects } from '../lib/projects';
 
-const projects = await getProjects();
+const projects = await getHomepageProjects();
 const total = projects.length;
 const columnCount = 3;
 
@@ -24,8 +24,9 @@ projects.forEach((project) => {
 	{
 		total === 0 ? (
 			<p class="projects-empty">
-				Aucun projet publié pour le moment. Ajoute-en dans le{' '}
-				<a href="/admin">Studio Sanity</a>.
+				Aucun projet publié pour le moment. Lance le Studio (
+				<code>cd studio && npm run dev</code>
+				) pour en créer.
 			</p>
 		) : (
 			<div class="projects-masonry">
@@ -35,26 +36,26 @@ projects.forEach((project) => {
 							<a
 								class="project-card"
 								href={project.href}
-								target="_blank"
-								rel="noopener noreferrer"
 								style={`--order: ${project.index}`}
 							>
 								<div class="project-card__media">
 									<img
-										src={project.imageUrl}
-										alt={project.alt}
+										src={project.coverImageUrl}
+										alt={project.coverAlt}
 										loading="lazy"
 										width="900"
 										height="1350"
 									/>
 								</div>
 								<p class="project-card__caption">
-									<span class="project-card__name">{project.name}</span>
+									<span class="project-card__name">{project.title}</span>
 									<span class="project-card__sep" aria-hidden="true">
 										{' '}
 										·{' '}
 									</span>
-									<span class="project-card__tagline">{project.tagline}</span>
+									<span class="project-card__tagline">
+										{project.client} — {project.categoryLabel}
+									</span>
 								</p>
 							</a>
 						))}

@@ -1,0 +1,17 @@
+---
+import { PortableText } from 'astro-portabletext';
+
+interface Props {
+	value: unknown[] | null | undefined;
+}
+
+const { value } = Astro.props;
+---
+
+{
+	value && value.length > 0 ? (
+		<div class="portable-text">
+			<PortableText value={value as never} />
+		</div>
+	) : null
+}
