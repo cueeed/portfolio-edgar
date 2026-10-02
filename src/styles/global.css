@@ -323,6 +323,8 @@ button {
 	z-index: 30;
 	display: grid;
 	grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+	align-items: stretch;
+	min-height: 100svh;
 	background: color-mix(in srgb, var(--color-bg) 92%, transparent);
 	backdrop-filter: blur(10px);
 	animation: folio-fade 0.45s var(--ease-soft) both;
@@ -352,6 +354,8 @@ button {
 .folio__detail-media {
 	position: relative;
 	overflow: clip;
+	min-height: 100%;
+	height: 100%;
 	animation: folio-media-in 0.7s var(--ease-out) both;
 }
 
@@ -359,14 +363,70 @@ button {
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
+	will-change: opacity, transform;
 }
 
 .folio__detail-content {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
+	align-self: stretch;
+	min-height: 100%;
+	box-sizing: border-box;
 	padding: clamp(4rem, 10vh, 6rem) clamp(1.5rem, 5vw, 4.5rem);
 	gap: 1.35rem;
+	will-change: opacity, transform;
+}
+
+/* Swap lent entre projets (scroll / flèches) */
+.folio__detail.is-swap-out.is-swap-next .folio__detail-media img {
+	animation: folio-swap-media-out-next 0.7s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+.folio__detail.is-swap-out.is-swap-prev .folio__detail-media img {
+	animation: folio-swap-media-out-prev 0.7s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+.folio__detail.is-swap-out.is-swap-next .folio__detail-content {
+	animation: folio-swap-content-out-next 0.7s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+.folio__detail.is-swap-out.is-swap-prev .folio__detail-content {
+	animation: folio-swap-content-out-prev 0.7s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+.folio__detail.is-swap-in.is-swap-next .folio__detail-media img {
+	animation: folio-swap-media-in-next 1.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.folio__detail.is-swap-in.is-swap-prev .folio__detail-media img {
+	animation: folio-swap-media-in-prev 1.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.folio__detail.is-swap-in.is-swap-next .folio__detail-content {
+	animation: folio-swap-content-in-next 1.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.folio__detail.is-swap-in.is-swap-prev .folio__detail-content {
+	animation: folio-swap-content-in-prev 1.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.folio__detail.is-swap-out .folio__detail-index,
+.folio__detail.is-swap-out .folio__detail-title,
+.folio__detail.is-swap-out .folio__meta,
+.folio__detail.is-swap-out .folio__detail-desc,
+.folio__detail.is-swap-out .folio__cta,
+.folio__detail.is-swap-in .folio__detail-index,
+.folio__detail.is-swap-in .folio__detail-title,
+.folio__detail.is-swap-in .folio__meta,
+.folio__detail.is-swap-in .folio__detail-desc,
+.folio__detail.is-swap-in .folio__cta,
+.folio__detail.is-swapped .folio__detail-index,
+.folio__detail.is-swapped .folio__detail-title,
+.folio__detail.is-swapped .folio__meta,
+.folio__detail.is-swapped .folio__detail-desc,
+.folio__detail.is-swapped .folio__cta {
+	animation: none;
 }
 
 .folio__detail-index {
@@ -644,6 +704,93 @@ button {
 	}
 }
 
+@keyframes folio-swap-media-out-next {
+	from {
+		clip-path: inset(0 0 0 0);
+		transform: scale(1);
+	}
+	to {
+		clip-path: inset(0 0 100% 0);
+		transform: scale(1.03);
+	}
+}
+
+@keyframes folio-swap-media-out-prev {
+	from {
+		clip-path: inset(0 0 0 0);
+		transform: scale(1);
+	}
+	to {
+		clip-path: inset(100% 0 0 0);
+		transform: scale(1.03);
+	}
+}
+
+@keyframes folio-swap-media-in-next {
+	from {
+		clip-path: inset(100% 0 0 0);
+		transform: scale(1.04);
+	}
+	to {
+		clip-path: inset(0 0 0 0);
+		transform: scale(1);
+	}
+}
+
+@keyframes folio-swap-media-in-prev {
+	from {
+		clip-path: inset(0 0 100% 0);
+		transform: scale(1.04);
+	}
+	to {
+		clip-path: inset(0 0 0 0);
+		transform: scale(1);
+	}
+}
+@keyframes folio-swap-content-out-next {
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(-1.75rem);
+	}
+}
+
+@keyframes folio-swap-content-out-prev {
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(1.75rem);
+	}
+}
+
+@keyframes folio-swap-content-in-next {
+	from {
+		opacity: 0;
+		transform: translateY(2.25rem);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes folio-swap-content-in-prev {
+	from {
+		opacity: 0;
+		transform: translateY(-2.25rem);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
 @media (max-width: 860px) {
 	.folio__detail {
 		grid-template-columns: 1fr;
@@ -653,7 +800,8 @@ button {
 
 	.folio__detail-content {
 		padding: 1.75rem var(--space-inline) 3rem;
-		justify-content: flex-start;
+		justify-content: center;
+		min-height: auto;
 	}
 
 	.folio__detail-title {
@@ -678,10 +826,10 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-	*,
-	*::before,
-	*::after {
-		animation: none !important;
-		transition: none !important;
+	.folio__detail.is-swap-out .folio__detail-media img,
+	.folio__detail.is-swap-in .folio__detail-media img,
+	.folio__detail.is-swap-out .folio__detail-content,
+	.folio__detail.is-swap-in .folio__detail-content {
+		animation-duration: 0.01ms !important;
 	}
 }

@@ -63,12 +63,29 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [aboutOpen, setAboutOpen] = useState(false);
 	const [entered, setEntered] = useState(false);
+	const [swapPhase, setSwapPhase] = useState<'idle' | 'out' | 'in'>('idle');
+	const [swapDir, setSwapDir] = useState<1 | -1>(1);
+	const [hasSwapped, setHasSwapped] = useState(false);
 
 	const selected = projects.find((p) => p.id === selectedId) ?? null;
+	const selectedIndex = selected ? projects.findIndex((p) => p.id === selected.id) : -1;
 	const total = projects.length;
 	const overlayOpen = Boolean(selected) || aboutOpen;
 	const overlayOpenRef = useRef(overlayOpen);
 	overlayOpenRef.current = overlayOpen;
+	const selectedIdRef = useRef(selectedId);
+	selectedIdRef.current = selectedId;
+	const swapBusyRef = useRef(false);
+	const swapTimersRef = useRef<number[]>([]);
+	const scrollToProjectRef = useRef<(index: number, immediate?: boolean) => void>(() => {});
+
+	const SWAP_OUT_MS = 700;
+	const SWAP_IN_MS = 1100;
+
+	const clearSwapTimers = () => {
+		swapTimersRef.current.forEach((id) => window.clearTimeout(id));
+		swapTimersRef.current = [];
+	};
 
 	useEffect(() => {
 		const id = requestAnimationFrame(() => setEntered(true));
@@ -81,15 +98,98 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 	}, [overlayOpen]);
 
 	useEffect(() => {
+		return () => clearSwapTimers();
+	}, []);
+
+	const goToProjectByOffset = useCallback(
+		(delta: number) => {
+			const currentId = selectedIdRef.current;
+			if (!currentId || projects.length < 2 || swapBusyRef.current) return;
+
+			const current = projects.findIndex((p) => p.id === currentId);
+			if (current < 0) return;
+
+			const next = (current + delta + projects.length) % projects.length;
+			if (next === current) return;
+
+			const direction = (delta > 0 ? 1 : -1) as 1 | -1;
+			swapBusyRef.current = true;
+			setSwapDir(direction);
+			setSwapPhase('out');
+
+			clearSwapTimers();
+			const tOut = window.setTimeout(() => {
+				setSelectedId(projects[next].id);
+				setActiveIndex(next);
+				scrollToProjectRef.current(next, true);
+				setSwapPhase('in');
+				setHasSwapped(true);
+
+				const tIn = window.setTimeout(() => {
+					setSwapPhase('idle');
+					swapBusyRef.current = false;
+				}, SWAP_IN_MS);
+				swapTimersRef.current.push(tIn);
+			}, SWAP_OUT_MS);
+			swapTimersRef.current.push(tOut);
+		},
+		[projects],
+	);
+
+	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.key === 'Escape') {
+				clearSwapTimers();
+				swapBusyRef.current = false;
+				setSwapPhase('idle');
+				setHasSwapped(false);
+				const idx = projects.findIndex((p) => p.id === selectedIdRef.current);
 				setSelectedId(null);
 				setAboutOpen(false);
+				if (idx >= 0) {
+					requestAnimationFrame(() => scrollToProjectRef.current(idx, true));
+				}
+				return;
+			}
+
+			if (!selectedIdRef.current || aboutOpen) return;
+
+			if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+				e.preventDefault();
+				goToProjectByOffset(1);
+			} else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+				e.preventDefault();
+				goToProjectByOffset(-1);
 			}
 		};
 		window.addEventListener('keydown', onKey);
 		return () => window.removeEventListener('keydown', onKey);
-	}, []);
+	}, [aboutOpen, goToProjectByOffset, projects]);
+
+	/* Scroll dans l’overlay → projet suivant / précédent */
+	useEffect(() => {
+		if (!selected || aboutOpen) return;
+
+		let accum = 0;
+		const THRESHOLD = 72;
+
+		const onWheel = (e: WheelEvent) => {
+			e.preventDefault();
+			if (swapBusyRef.current) return;
+
+			const dy = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+			accum += dy;
+
+			if (Math.abs(accum) < THRESHOLD) return;
+
+			const direction = accum > 0 ? 1 : -1;
+			accum = 0;
+			goToProjectByOffset(direction);
+		};
+
+		window.addEventListener('wheel', onWheel, { passive: false });
+		return () => window.removeEventListener('wheel', onWheel);
+	}, [selected, aboutOpen, goToProjectByOffset]);
 
 	const updateActiveFromScroll = useCallback(() => {
 		const track = trackRef.current;
@@ -190,6 +290,7 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 			lenis.scrollTo(Math.max(0, left), { immediate, force: true });
 			setActiveIndex(index);
 		};
+		scrollToProjectRef.current = scrollToProject;
 
 		// Démarre sur le premier projet (centré)
 		const startOnFirst = () => {
@@ -330,6 +431,7 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 			window.removeEventListener('pointerup', endDrag);
 			window.removeEventListener('pointercancel', endDrag);
 			window.removeEventListener('blur', onPointerLeaveWindow);
+			scrollToProjectRef.current = () => {};
 			lenis.destroy();
 			lenisRef.current = null;
 		};
@@ -357,11 +459,32 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 
 	const openProject = (id: string) => {
 		if (dragRef.current.dragging) return;
+		clearSwapTimers();
+		swapBusyRef.current = false;
+		setSwapPhase('idle');
+		setHasSwapped(false);
 		setAboutOpen(false);
 		setSelectedId(id);
 	};
 
-	const closeProject = () => setSelectedId(null);
+	const closeProject = () => {
+		clearSwapTimers();
+		swapBusyRef.current = false;
+		setSwapPhase('idle');
+		setHasSwapped(false);
+		const idx = selectedIndex >= 0 ? selectedIndex : activeIndex;
+		setSelectedId(null);
+		requestAnimationFrame(() => scrollToProjectRef.current(idx, true));
+	};
+
+	const detailSwapClass =
+		swapPhase === 'out'
+			? ` is-swap-out is-swap-${swapDir > 0 ? 'next' : 'prev'}`
+			: swapPhase === 'in'
+				? ` is-swap-in is-swap-${swapDir > 0 ? 'next' : 'prev'}`
+				: hasSwapped
+					? ' is-swapped'
+					: '';
 
 	return (
 		<div className={`folio${entered ? ' is-ready' : ''}${selected ? ' is-detail' : ''}`}>
@@ -449,7 +572,7 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 
 				{selected && (
 					<section
-						className="folio__detail"
+						className={`folio__detail${detailSwapClass}`}
 						aria-modal="true"
 						role="dialog"
 						aria-labelledby="folio-detail-title"
@@ -465,6 +588,7 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 
 						<div className="folio__detail-media">
 							<img
+								key={selected.id}
 								src={selected.coverImageUrl}
 								alt={selected.coverAlt}
 								width="900"
@@ -472,9 +596,9 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 							/>
 						</div>
 
-						<div className="folio__detail-content">
+						<div className="folio__detail-content" key={selected.id}>
 							<p className="folio__detail-index">
-								{padIndex(selected.index + 1)}
+								{padIndex((selectedIndex >= 0 ? selectedIndex : selected.index) + 1)}
 								<span aria-hidden="true"> / </span>
 								{padIndex(total)}
 							</p>
