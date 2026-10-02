@@ -1,14 +1,11 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import PortableText from '../../components/PortableText.astro';
 import {
 	getProjects,
 	getProjectBySlug,
-	galleryImageUrl,
-	categoryLabels,
+	formatProjectDate,
 } from '../../lib/projects';
 import { urlFor } from '../../lib/image';
-import type { ProjectCategory } from '../../lib/projects';
 
 export async function getStaticPaths() {
 	const projects = await getProjects();
@@ -37,14 +34,8 @@ const coverUrl = urlFor(project.coverImage)
 	.auto('format')
 	.url();
 
-const services =
-	project.services && project.services.length > 0
-		? project.services
-		: project.category
-			? [categoryLabels[project.category as ProjectCategory] ?? project.category]
-			: [];
-
-const gallery = (project.gallery ?? []).filter(Boolean);
+const services = project.services ?? [];
+const dateLabel = formatProjectDate(project);
 ---
 
 <BaseLayout
@@ -56,7 +47,7 @@ const gallery = (project.gallery ?? []).filter(Boolean);
 			<a class="project-detail__back" href="/">← Projets</a>
 
 			<p class="project-detail__meta">
-				{[project.client, project.year, services.join(' · ')].filter(Boolean).join(' · ')}
+				{[dateLabel, services.join(' · ')].filter(Boolean).join(' · ')}
 			</p>
 			<h1 class="project-detail__title">{project.title}</h1>
 			<p class="project-detail__lead">{project.shortDescription}</p>
@@ -74,36 +65,6 @@ const gallery = (project.gallery ?? []).filter(Boolean);
 			<figure class="project-detail__cover">
 				<img src={coverUrl} alt={project.coverAlt} width="1800" height="1200" />
 			</figure>
-
-			<div class="project-detail__body">
-				<PortableText value={project.body} />
-			</div>
-
-			{
-				gallery.length > 0 && (
-					<ul class="project-detail__gallery">
-						{gallery.map((image) => {
-							const alt = 'alt' in image && typeof image.alt === 'string' ? image.alt : project.title;
-							const caption =
-								'caption' in image && typeof image.caption === 'string' ? image.caption : null;
-							return (
-								<li>
-									<figure>
-										<img
-											src={galleryImageUrl(image)}
-											alt={alt}
-											loading="lazy"
-											width="1600"
-											height="1200"
-										/>
-										{caption && <figcaption>{caption}</figcaption>}
-									</figure>
-								</li>
-							);
-						})}
-					</ul>
-				)
-			}
 		</article>
 	</main>
 </BaseLayout>

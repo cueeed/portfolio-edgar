@@ -8,8 +8,7 @@ const projects = await getHomepageProjects();
 const portfolioProjects = projects.map((project) => ({
 	id: project._id,
 	title: project.title,
-	client: project.client,
-	year: project.year,
+	dateLabel: project.dateLabel,
 	services: project.services,
 	shortDescription: project.shortDescription,
 	coverImageUrl: project.coverImageUrl,

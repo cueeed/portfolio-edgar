@@ -5,8 +5,7 @@ import 'lenis/dist/lenis.css';
 export interface PortfolioProject {
 	id: string;
 	title: string;
-	client: string;
-	year: number;
+	dateLabel: string;
 	services: string[];
 	shortDescription: string;
 	coverImageUrl: string;
@@ -418,7 +417,7 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 										data-title={project.title}
 										className="folio__strip"
 										onClick={() => openProject(project.id)}
-										aria-label={`${project.title}, ${project.client}`}
+										aria-label={project.title}
 									>
 										<img
 											src={project.coverImageUrl}
@@ -486,12 +485,8 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 
 							<dl className="folio__meta">
 								<div>
-									<dt>Client</dt>
-									<dd>{selected.client}</dd>
-								</div>
-								<div>
-									<dt>Année</dt>
-									<dd>{selected.year}</dd>
+									<dt>Date</dt>
+									<dd>{selected.dateLabel}</dd>
 								</div>
 								<div>
 									<dt>Prestations</dt>

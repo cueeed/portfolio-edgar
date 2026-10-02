@@ -1,15 +1,6 @@
 import type { PortfolioProject } from '../components/Portfolio';
 
-const servicesPool = [
-	['Identité visuelle'],
-	['Site web'],
-	['UI / Interface'],
-	['Motion'],
-	['Identité visuelle', 'Site web'],
-	['UI / Interface', 'Motion'],
-	['Direction artistique', 'Site web'],
-	['Branding', 'UI / Interface'],
-];
+const servicesPool = [['Webdesign'], ['Branding'], ['Webdesign', 'Branding']];
 
 const titles = [
 	'Atelier Nord',
@@ -27,24 +18,6 @@ const titles = [
 	'Villa Ardoise',
 	'Collectif Orbit',
 	'Marque Alba',
-];
-
-const clients = [
-	'Nord & Co',
-	'Eluard SAS',
-	'Kite Agency',
-	'Ville de Lyon',
-	'Octave Groupe',
-	'Mira Art',
-	'Solstice Avocats',
-	'Forme Vive',
-	'Bellevue Hospitality',
-	'Rive Presse',
-	'Copper Studio',
-	'Nocturne Lab',
-	'Ardoise Immob.',
-	'Orbit Collab',
-	'Alba Beauty',
 ];
 
 const descriptions = [
@@ -66,18 +39,26 @@ const descriptions = [
 ];
 
 /** 15 projets fictifs pour tester le scroll horizontal. */
-export const demoProjects: PortfolioProject[] = titles.map((title, i) => ({
-	id: `demo-${i + 1}`,
-	title,
-	client: clients[i],
-	year: 2018 + (i % 8),
-	services: servicesPool[i % servicesPool.length],
-	shortDescription: descriptions[i],
-	coverImageUrl: `https://picsum.photos/seed/edgar-folio-${i + 1}/600/960`,
-	coverAlt: `Visuel du projet ${title}`,
-	externalUrl: i % 3 === 0 ? `https://example.com/${title.toLowerCase().replace(/\s+/g, '-')}` : null,
-	index: i,
-}));
+export const demoProjects: PortfolioProject[] = titles.map((title, i) => {
+	const year = 2018 + (i % 8);
+	const month = (i % 12) + 1;
+	const dateLabel = new Date(year, month - 1, 1).toLocaleDateString('fr-FR', {
+		month: 'long',
+		year: 'numeric',
+	});
+
+	return {
+		id: `demo-${i + 1}`,
+		title,
+		dateLabel,
+		services: servicesPool[i % servicesPool.length],
+		shortDescription: descriptions[i],
+		coverImageUrl: `https://picsum.photos/seed/edgar-folio-${i + 1}/600/960`,
+		coverAlt: `Visuel du projet ${title}`,
+		externalUrl: i % 3 === 0 ? `https://example.com/${title.toLowerCase().replace(/\s+/g, '-')}` : null,
+		index: i,
+	};
+});
 
 /** Priorise Sanity, complète jusqu’à 15 avec les démos. */
 export function withDemoProjects(projects: PortfolioProject[], target = 15): PortfolioProject[] {
