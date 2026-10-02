@@ -1,0 +1,70 @@
+---
+import { getProjects } from '../lib/projects';
+
+const projects = await getProjects();
+const total = projects.length;
+const columnCount = 3;
+
+const columns = Array.from({ length: columnCount }, () => [] as typeof projects);
+
+projects.forEach((project) => {
+	columns[project.index % columnCount].push(project);
+});
+---
+
+<section class="section section--projects" id="projets">
+	<header class="projects-header">
+		<p class="projects-intro">
+			J’aime créer des solutions innovantes qui répondent à un besoin précis.
+			Car chaque client mérite d’être accompagné.
+		</p>
+		<h2 class="projects-heading">Projets ({total})</h2>
+	</header>
+
+	{
+		total === 0 ? (
+			<p class="projects-empty">
+				Aucun projet publié pour le moment. Ajoute-en dans le{' '}
+				<a href="/admin">Studio Sanity</a>.
+			</p>
+		) : (
+			<div class="projects-masonry">
+				{columns.map((column, colIndex) => (
+					<div class={`projects-col projects-col--${colIndex + 1}`}>
+						{column.map((project) => (
+							<a
+								class="project-card"
+								href={project.href}
+								target="_blank"
+								rel="noopener noreferrer"
+								style={`--order: ${project.index}`}
+							>
+								<div class="project-card__media">
+									<img
+										src={project.imageUrl}
+										alt={project.alt}
+										loading="lazy"
+										width="900"
+										height="1350"
+									/>
+								</div>
+								<p class="project-card__caption">
+									<span class="project-card__name">{project.name}</span>
+									<span class="project-card__sep" aria-hidden="true">
+										{' '}
+										·{' '}
+									</span>
+									<span class="project-card__tagline">{project.tagline}</span>
+								</p>
+							</a>
+						))}
+					</div>
+				))}
+			</div>
+		)
+	}
+
+	<p class="projects-aside">
+		Chaque projet a été réalisé dans le cadre de mon poste chez Publipresse.
+	</p>
+</section>

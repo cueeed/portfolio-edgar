@@ -1,0 +1,18 @@
+---
+const links = [
+	{ href: '#projets', label: 'Projets' },
+	{ href: '#a-propos', label: 'À propos' },
+	{ href: '#contact', label: 'Contact' },
+];
+---
+
+<header class="site-header">
+	<a class="logo" href="#top">Edgar</a>
+	<nav aria-label="Navigation principale">
+		{
+			links.map((link) => (
+				<a href={link.href}>{link.label}</a>
+			))
+		}
+	</nav>
+</header>
