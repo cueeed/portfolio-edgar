@@ -23,6 +23,7 @@ const DRAG_THRESHOLD = 10;
 const VELOCITY_SAMPLES = 5;
 const MOMENTUM_MS = 280;
 const MIN_VELOCITY = 0.08; // px/ms
+const MOBILE_MQ = '(max-width: 860px)';
 
 function padIndex(n: number) {
 	return String(n).padStart(2, '0');
@@ -32,20 +33,39 @@ function easeOutExpo(t: number) {
 	return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
 }
 
+function useIsMobile() {
+	const [isMobile, setIsMobile] = useState(() =>
+		typeof window !== 'undefined' ? window.matchMedia(MOBILE_MQ).matches : false,
+	);
+
+	useEffect(() => {
+		const mq = window.matchMedia(MOBILE_MQ);
+		const update = () => setIsMobile(mq.matches);
+		update();
+		mq.addEventListener('change', update);
+		return () => mq.removeEventListener('change', update);
+	}, []);
+
+	return isMobile;
+}
+
 export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: Props) {
 	const trackRef = useRef<HTMLDivElement>(null);
 	const contentRef = useRef<HTMLDivElement>(null);
 	const lenisRef = useRef<Lenis | null>(null);
+	const isMobile = useIsMobile();
+	const isVerticalRef = useRef(false);
+	isVerticalRef.current = isMobile;
 	const dragRef = useRef<{
 		pointerId: number | null;
-		startX: number;
-		scrollLeft: number;
+		startPos: number;
+		scrollPos: number;
 		dragging: boolean;
-		samples: Array<{ x: number; t: number }>;
+		samples: Array<{ pos: number; t: number }>;
 	}>({
 		pointerId: null,
-		startX: 0,
-		scrollLeft: 0,
+		startPos: 0,
+		scrollPos: 0,
 		dragging: false,
 		samples: [],
 	});
@@ -57,6 +77,8 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 	});
 	const hoveredStripRef = useRef<HTMLElement | null>(null);
 	const [activeIndex, setActiveIndex] = useState(0);
+	const activeIndexRef = useRef(0);
+	activeIndexRef.current = activeIndex;
 	const [hoveredTitle, setHoveredTitle] = useState<string | null>(null);
 	const [displayTitle, setDisplayTitle] = useState<string | null>(null);
 	const [titleKey, setTitleKey] = useState(0);
@@ -195,13 +217,18 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 		const track = trackRef.current;
 		if (!track || projects.length === 0) return;
 
-		const center = track.scrollLeft + track.clientWidth / 2;
+		const vertical = isVerticalRef.current;
+		const center = vertical
+			? track.scrollTop + track.clientHeight / 2
+			: track.scrollLeft + track.clientWidth / 2;
 		const items = Array.from(track.querySelectorAll<HTMLElement>('[data-project-strip]'));
 		let closest = 0;
 		let minDist = Infinity;
 
 		items.forEach((el, i) => {
-			const mid = el.offsetLeft + el.offsetWidth / 2;
+			const mid = vertical
+				? el.offsetTop + el.offsetHeight / 2
+				: el.offsetLeft + el.offsetWidth / 2;
 			const dist = Math.abs(mid - center);
 			if (dist < minDist) {
 				minDist = dist;
@@ -217,10 +244,13 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 		const content = contentRef.current;
 		if (!track || !content || projects.length === 0) return;
 
+		const vertical = isMobile;
+		track.classList.toggle('is-vertical', vertical);
+
 		const lenis = new Lenis({
 			wrapper: track,
 			content,
-			orientation: 'horizontal',
+			orientation: vertical ? 'vertical' : 'horizontal',
 			gestureOrientation: 'vertical',
 			eventsTarget: window,
 			smoothWheel: true,
@@ -233,6 +263,7 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 		});
 
 		lenisRef.current = lenis;
+		if (overlayOpenRef.current) lenis.stop();
 
 		const clearHoveredStrip = () => {
 			if (hoveredStripRef.current) {
@@ -286,29 +317,31 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 			const items = content.querySelectorAll<HTMLElement>('[data-project-strip]');
 			const target = items[index];
 			if (!target) return;
-			const left = target.offsetLeft - (track.clientWidth - target.offsetWidth) / 2;
-			lenis.scrollTo(Math.max(0, left), { immediate, force: true });
+			const offset = vertical
+				? target.offsetTop - (track.clientHeight - target.offsetHeight) / 2
+				: target.offsetLeft - (track.clientWidth - target.offsetWidth) / 2;
+			lenis.scrollTo(Math.max(0, offset), { immediate, force: true });
 			setActiveIndex(index);
 		};
 		scrollToProjectRef.current = scrollToProject;
 
-		// Démarre sur le premier projet (centré)
-		const startOnFirst = () => {
-			scrollToProject(0, true);
+		// Démarre / recalcule sur le projet actif (centré)
+		const startCentered = () => {
+			scrollToProject(activeIndexRef.current, true);
 		};
 		requestAnimationFrame(() => {
-			startOnFirst();
-			requestAnimationFrame(startOnFirst);
+			startCentered();
+			requestAnimationFrame(startCentered);
 		});
 		// Recale après chargement des images (layout stable)
 		const images = Array.from(content.querySelectorAll('img'));
 		let pending = images.length;
 		const onImageDone = () => {
 			pending -= 1;
-			if (pending <= 0) startOnFirst();
+			if (pending <= 0) startCentered();
 		};
 		if (pending === 0) {
-			startOnFirst();
+			startCentered();
 		} else {
 			images.forEach((img) => {
 				if (img.complete) onImageDone();
@@ -326,9 +359,9 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 			clearHoveredStrip();
 		};
 
-		const pushSample = (x: number) => {
+		const pushSample = (pos: number) => {
 			const samples = dragRef.current.samples;
-			samples.push({ x, t: performance.now() });
+			samples.push({ pos, t: performance.now() });
 			if (samples.length > VELOCITY_SAMPLES) samples.shift();
 		};
 
@@ -339,20 +372,21 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 			const last = samples[samples.length - 1];
 			const dt = last.t - first.t;
 			if (dt <= 0) return 0;
-			// Drag à droite → scroll diminue : vitesse de scroll = -(dx/dt)
-			return -(last.x - first.x) / dt;
+			// Drag dans le sens positif → scroll diminue
+			return -(last.pos - first.pos) / dt;
 		};
 
 		const onPointerDown = (e: PointerEvent) => {
 			if (overlayOpenRef.current || e.button !== 0) return;
 			if (e.pointerType === 'touch') return;
 
+			const startPos = vertical ? e.clientY : e.clientX;
 			dragRef.current = {
 				pointerId: e.pointerId,
-				startX: e.clientX,
-				scrollLeft: track.scrollLeft,
+				startPos,
+				scrollPos: vertical ? track.scrollTop : track.scrollLeft,
 				dragging: false,
-				samples: [{ x: e.clientX, t: performance.now() }],
+				samples: [{ pos: startPos, t: performance.now() }],
 			};
 		};
 
@@ -367,18 +401,19 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 				return;
 			}
 
-			const dx = e.clientX - drag.startX;
+			const pos = vertical ? e.clientY : e.clientX;
+			const delta = pos - drag.startPos;
 
 			if (!drag.dragging) {
-				if (Math.abs(dx) < DRAG_THRESHOLD) return;
+				if (Math.abs(delta) < DRAG_THRESHOLD) return;
 				drag.dragging = true;
 				track.classList.add('is-dragging');
 				clearHoveredStrip();
 			}
 
 			e.preventDefault();
-			pushSample(e.clientX);
-			lenis.scrollTo(drag.scrollLeft - dx, { immediate: true, force: true });
+			pushSample(pos);
+			lenis.scrollTo(drag.scrollPos - delta, { immediate: true, force: true });
 		};
 
 		const endDrag = (e: PointerEvent) => {
@@ -386,7 +421,7 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 			if (drag.pointerId !== e.pointerId) return;
 
 			const wasDragging = drag.dragging;
-			pushSample(e.clientX);
+			pushSample(vertical ? e.clientY : e.clientX);
 
 			const velocity = getVelocity(); // px/ms
 			drag.pointerId = null;
@@ -398,7 +433,8 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 				if (Math.abs(velocity) > MIN_VELOCITY) {
 					const distance = velocity * MOMENTUM_MS;
 					const duration = Math.min(1.35, Math.max(0.45, Math.abs(distance) / 900));
-					lenis.scrollTo(track.scrollLeft + distance, {
+					const current = vertical ? track.scrollTop : track.scrollLeft;
+					lenis.scrollTo(current + distance, {
 						duration,
 						easing: easeOutExpo,
 						force: true,
@@ -426,6 +462,7 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 			if (rafId) cancelAnimationFrame(rafId);
 			if (scrollIdleRef.current) window.clearTimeout(scrollIdleRef.current);
 			clearHoveredStrip();
+			track.classList.remove('is-vertical');
 			track.removeEventListener('pointerdown', onPointerDown);
 			window.removeEventListener('pointermove', onPointerMove);
 			window.removeEventListener('pointerup', endDrag);
@@ -435,7 +472,7 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 			lenis.destroy();
 			lenisRef.current = null;
 		};
-	}, [projects.length, updateActiveFromScroll]);
+	}, [projects.length, updateActiveFromScroll, isMobile]);
 
 	useEffect(() => {
 		const lenis = lenisRef.current;
@@ -487,7 +524,9 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 					: '';
 
 	return (
-		<div className={`folio${entered ? ' is-ready' : ''}${selected ? ' is-detail' : ''}`}>
+		<div
+			className={`folio${entered ? ' is-ready' : ''}${selected ? ' is-detail' : ''}${isMobile ? ' is-mobile' : ''}`}
+		>
 			<header className="folio__chrome folio__chrome--top">
 				<a className="folio__brand" href="/" aria-label="Edgar — accueil">
 					Edgar
@@ -528,8 +567,12 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 					<div className="folio__track-wrap" aria-hidden={Boolean(selected) || undefined}>
 						<div
 							ref={trackRef}
-							className="folio__track"
-							aria-label="Projets — faire défiler horizontalement"
+							className={`folio__track${isMobile ? ' is-vertical' : ''}`}
+							aria-label={
+								isMobile
+									? 'Projets — faire défiler verticalement'
+									: 'Projets — faire défiler horizontalement'
+							}
 						>
 							<div ref={contentRef} className="folio__track-inner">
 								{projects.map((project, i) => (
@@ -538,9 +581,10 @@ export default function Portfolio({ projects, email = 'bonjour@exemple.com' }: P
 										type="button"
 										data-project-strip
 										data-title={project.title}
-										className="folio__strip"
+										className={`folio__strip${i === activeIndex ? ' is-active' : ''}`}
 										onClick={() => openProject(project.id)}
 										aria-label={project.title}
+										aria-current={i === activeIndex ? 'true' : undefined}
 									>
 										<img
 											src={project.coverImageUrl}
