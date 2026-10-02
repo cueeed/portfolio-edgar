@@ -17,11 +17,10 @@ export default defineConfig({
 			projectId: PUBLIC_SANITY_PROJECT_ID,
 			dataset: PUBLIC_SANITY_DATASET,
 			apiVersion: '2026-03-01',
-			// Site statique : données fraîches au build, pas via CDN
 			useCdn: false,
-			// Pas de Studio embarqué — Studio séparé dans /studio (sanity deploy)
+			// Studio embarqué sur le site
+			studioBasePath: '/backend',
 		}),
-		// React reste pour d’éventuels composants UI ; le Studio n’est plus monté ici
 		react(),
 	],
 	image: {
