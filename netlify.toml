@@ -1,0 +1,9 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Astro static — pas d’adapter Netlify requis
+# Rebuild auto à chaque push sur main via le lien GitHub
