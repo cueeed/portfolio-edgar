@@ -6,4 +6,7 @@
   NODE_VERSION = "22"
 
 # Astro static — pas d’adapter Netlify requis
-# Rebuild auto à chaque push sur main via le lien GitHub
+# Rebuilds :
+# - automatique sur push GitHub → main
+# - manuel depuis Sanity (« Mettre en ligne ») via un Build Hook Netlify
+# Ne pas brancher de webhook Sanity → Netlify (évite un rebuild à chaque publish)
