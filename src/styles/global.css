@@ -18,7 +18,7 @@
 :root {
 	--color-bg: #ffffff;
 	--color-ink: #141414;
-	--color-muted: #6e6e6e;
+	--color-muted: #4a4a4a;
 	--color-accent: #9a6b2f;
 	--color-line: color-mix(in srgb, var(--color-ink) 12%, transparent);
 
@@ -94,7 +94,7 @@ button {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 1.35rem var(--space-inline);
+	padding: 32px;
 	pointer-events: none;
 }
 
@@ -111,13 +111,63 @@ button {
 }
 
 .folio__brand {
-	font-family: var(--font-display);
-	font-weight: 200;
-	font-size: clamp(2rem, 4.5vw, 3.1rem);
-	letter-spacing: -0.02em;
+	font-family: var(--font-body);
+	font-weight: 500;
+	font-size: clamp(1.05rem, 1.8vw, 1.25rem);
+	letter-spacing: -0.03em;
 	line-height: 1;
 	text-decoration: none;
 	text-transform: none;
+	color: var(--color-ink);
+}
+
+.folio__brand--ghost {
+	visibility: hidden;
+	pointer-events: none;
+}
+
+/* Brand partagé entre les pages — position fixe */
+.site-brand {
+	position: fixed;
+	z-index: 60;
+	top: 32px;
+	left: 32px;
+	view-transition-name: brand;
+}
+
+/* Apparition type Aristide — lettres masquées, slide X */
+.mask-text {
+	display: inline-flex;
+	align-items: baseline;
+	white-space: nowrap;
+}
+
+.mask-text__char {
+	display: inline-block;
+	overflow: hidden;
+	line-height: 1.15;
+}
+
+.mask-text__inner {
+	display: inline-block;
+	transform: translate3d(110%, 0, 0);
+	transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+	transition-delay: calc(var(--i, 0) * 38ms + var(--mask-delay, 0ms));
+	will-change: transform;
+}
+
+.mask-text.is-in .mask-text__inner {
+	transform: translate3d(0, 0, 0);
+}
+
+::view-transition-old(brand),
+::view-transition-new(brand) {
+	animation: none;
+	mix-blend-mode: normal;
+}
+
+::view-transition-group(root) {
+	animation-duration: 0s;
 }
 
 .folio__pager {
@@ -138,22 +188,49 @@ button {
 }
 
 .folio__link {
+	position: relative;
+	display: inline-flex;
 	font-family: var(--font-mono);
 	font-size: 0.72rem;
 	letter-spacing: 0.12em;
 	text-transform: uppercase;
 	text-decoration: none;
-	color: var(--color-ink);
-	border-bottom: 1px solid transparent;
-	padding-bottom: 0.15rem;
-	transition:
-		color 0.3s ease,
-		border-color 0.3s ease;
+	color: var(--color-muted);
+	padding-bottom: 0.12rem;
+	transition: color 0.35s var(--ease-soft);
+}
+
+.folio__link::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 100%;
+	height: 1px;
+	background: currentColor;
+	transform: scaleX(0);
+	transform-origin: left center;
+	transition: transform 0.45s var(--ease-out);
 }
 
 .folio__link:hover {
-	color: var(--color-accent);
-	border-color: var(--color-accent);
+	color: var(--color-ink);
+}
+
+.folio__link:hover::after {
+	transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.folio__link::after {
+		transition: none;
+		transform: scaleX(1);
+		opacity: 0;
+	}
+
+	.folio__link:hover::after {
+		opacity: 1;
+	}
 }
 
 .folio__status {
@@ -163,6 +240,13 @@ button {
 	text-transform: uppercase;
 	color: var(--color-muted);
 	max-width: 14rem;
+}
+
+.folio__contacts {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 0.1rem;
 }
 
 /* ——— Stage / track ——— */
@@ -204,17 +288,12 @@ button {
 .folio__track {
 	width: 100%;
 	max-width: 100vw;
-	overflow-x: auto;
-	overflow-y: hidden;
-	overscroll-behavior-x: contain;
-	scrollbar-width: none;
+	overflow: hidden;
 	box-sizing: border-box;
 	cursor: grab;
-	touch-action: pan-x;
-}
-
-.folio__track::-webkit-scrollbar {
-	display: none;
+	touch-action: none;
+	user-select: none;
+	-webkit-user-select: none;
 }
 
 .folio__track.is-dragging {
@@ -222,14 +301,15 @@ button {
 }
 
 .folio__track-inner {
-	--folio-strip-w: min(14.5rem, 64vw);
+	--folio-strip-w: min(14.5rem, 58vw);
+	--folio-strip-h: min(46svh, 28rem);
 	display: flex;
 	align-items: center;
-	gap: 0.75rem;
+	gap: 0.85rem;
 	width: max-content;
-	/* Assez de padding pour centrer le 1er et le dernier projet */
 	padding: 0 max(1rem, calc((100vw - var(--folio-strip-w)) / 2));
-	min-height: min(46svh, 28rem);
+	min-height: calc(var(--folio-strip-h) * 1.08);
+	will-change: transform;
 }
 
 .folio__strip {
@@ -237,34 +317,54 @@ button {
 	flex: 0 0 auto;
 	width: var(--folio-strip-w);
 	min-width: var(--folio-strip-w);
-	height: min(46svh, 28rem);
-	overflow: clip;
+	height: var(--folio-strip-h);
+	overflow: hidden;
 	padding: 0;
 	filter: grayscale(1) brightness(0.94);
-	opacity: 0.78;
+	opacity: 0.72;
+	transform-origin: center center;
+	will-change: transform, filter, opacity;
 	transition:
-		filter 0.45s var(--ease-soft),
-		opacity 0.45s var(--ease-soft);
+		filter 0.5s var(--ease-soft),
+		opacity 0.5s var(--ease-soft);
 }
 
-.folio__strip.is-active {
+/* Au repos : projet central en couleur, ou hover prioritaire */
+.folio__track:not(.is-moving):not(.has-hover) .folio__strip.is-active,
+.folio__track:not(.is-moving) .folio__strip.is-hovered {
 	filter: none;
 	opacity: 1;
 }
 
 @media (hover: hover) and (pointer: fine) {
-	.folio__track:not(.is-dragging) .folio__strip:hover,
-	.folio__track:not(.is-dragging) .folio__strip.is-hovered {
+	.folio__track:not(.is-moving):not(.is-dragging) .folio__strip:hover {
 		filter: none;
 		opacity: 1;
 	}
 }
 
+/* En scroll / drag : couleur sur le projet au centre */
+.folio__track.is-moving .folio__strip.is-active {
+	filter: none;
+	opacity: 1;
+}
+
+.folio__strip-media {
+	display: block;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
 .folio__strip img {
+	display: block;
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
 	pointer-events: none;
+	transform: scale(1.32);
+	transform-origin: center center;
+	will-change: transform;
 }
 
 .folio__float-title {
@@ -280,7 +380,7 @@ button {
 	text-align: center;
 	pointer-events: none;
 	opacity: 0;
-	transition: opacity 0.25s var(--ease-soft);
+	transition: opacity 0.45s var(--ease-soft);
 }
 
 .folio__float-title.is-visible {
@@ -301,12 +401,12 @@ button {
 	letter-spacing: -0.03em;
 	line-height: 1.05;
 	color: var(--color-ink);
-	animation: folio-title-in 0.48s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+	animation: folio-title-in 1.15s var(--ease-out) both;
 }
 
 @keyframes folio-title-in {
 	from {
-		transform: translate3d(0, 28%, 0);
+		transform: translate3d(0, 18%, 0);
 		opacity: 0;
 	}
 	to {
@@ -337,23 +437,9 @@ button {
 
 .folio__detail-close {
 	position: absolute;
-	top: 1.35rem;
-	right: var(--space-inline);
+	top: 32px;
+	right: 32px;
 	z-index: 2;
-	font-family: var(--font-mono);
-	font-size: 0.72rem;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
-	border-bottom: 1px solid transparent;
-	padding-bottom: 0.15rem;
-	transition:
-		color 0.3s ease,
-		border-color 0.3s ease;
-}
-
-.folio__detail-close:hover {
-	color: var(--color-accent);
-	border-color: var(--color-accent);
 }
 
 .folio__detail-media {
@@ -522,38 +608,195 @@ button {
 	pointer-events: none;
 }
 
-/* ——— About ——— */
-.folio__about {
-	position: fixed;
-	inset: 0;
-	z-index: 40;
+/* ——— About page ——— */
+.about-page {
+	min-height: 100svh;
+	display: flex;
+	flex-direction: column;
+	padding: 32px;
+}
+
+.about-page__chrome {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-shrink: 0;
+}
+
+.about-page__main {
+	flex: 1;
 	display: grid;
-	place-items: center;
-	padding: var(--space-inline);
-	background: color-mix(in srgb, var(--color-bg) 94%, transparent);
-	backdrop-filter: blur(12px);
-	animation: folio-fade 0.4s var(--ease-soft) both;
+	grid-template-columns: minmax(12rem, 0.9fr) minmax(0, 1.6fr);
+	gap: clamp(2.5rem, 6vw, 5rem);
+	align-content: start;
+	padding-top: clamp(4rem, 12vh, 7.5rem);
+	border-top: 1px solid var(--color-line);
+	margin-top: 32px;
+	animation: about-line 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.folio__about-inner {
-	max-width: 34rem;
+.about-page__meta {
 	display: grid;
-	gap: 1.5rem;
-	animation: folio-rise 0.55s var(--ease-out) both;
+	gap: clamp(2rem, 4vh, 3rem);
+	align-content: start;
 }
 
-.folio__about-inner h2 {
-	font-family: var(--font-display);
-	font-size: clamp(2.4rem, 6vw, 3.8rem);
-	font-weight: 200;
-	letter-spacing: -0.03em;
-	text-transform: none;
+.about-page__block {
+	display: grid;
+	gap: 0.45rem;
 }
 
-.folio__about-inner p {
-	font-size: 1.05rem;
+.about-page__label {
+	font-family: var(--font-mono);
+	font-size: 0.68rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--color-muted);
+}
+
+.about-page__value {
+	font-size: clamp(0.95rem, 1.4vw, 1.05rem);
+	font-weight: 500;
+	letter-spacing: -0.02em;
+	line-height: 1.35;
+	text-decoration: none;
+}
+
+.about-page__value--link {
+	position: relative;
+	color: var(--color-ink);
+	width: fit-content;
+	padding-bottom: 0.12rem;
+}
+
+.about-page__value--link::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 100%;
+	height: 1px;
+	background: currentColor;
+	transform: scaleX(0);
+	transform-origin: left center;
+	transition: transform 0.45s var(--ease-out);
+}
+
+.about-page__value--link:hover::after {
+	transform: scaleX(1);
+}
+
+.about-page__bio {
+	display: grid;
+	gap: clamp(1.25rem, 3vh, 2rem);
+	max-width: 38rem;
+}
+
+.about-page__cta {
+	justify-self: start;
+	margin-top: 0.25rem;
+}
+
+.about-page__lead {
+	font-family: var(--font-body);
+	font-size: clamp(1.55rem, 3.2vw, 2.15rem);
+	font-weight: 500;
+	letter-spacing: -0.035em;
+	line-height: 1.2;
+}
+
+.about-page__body {
+	display: grid;
+	gap: 1rem;
+}
+
+.about-page__body p {
+	font-size: clamp(0.98rem, 1.35vw, 1.08rem);
 	line-height: 1.6;
-	color: color-mix(in srgb, var(--color-ink) 78%, transparent);
+	color: color-mix(in srgb, var(--color-ink) 72%, transparent);
+	max-width: 34rem;
+}
+
+.about-page__reveal {
+	opacity: 0;
+	animation: about-rise 1.05s cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0ms) both;
+}
+
+@keyframes about-rise {
+	from {
+		opacity: 0;
+		transform: translate3d(0, 1.6rem, 0);
+		filter: blur(3px);
+	}
+	to {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+		filter: blur(0);
+	}
+}
+
+@keyframes about-line {
+	from {
+		border-top-color: transparent;
+	}
+	to {
+		border-top-color: var(--color-line);
+	}
+}
+
+@media (max-width: 860px) {
+	.about-page {
+		padding: 24px;
+	}
+
+	.site-brand {
+		top: 24px;
+		left: 24px;
+	}
+
+	.about-page__main {
+		grid-template-columns: 1fr;
+		gap: 2.75rem;
+		padding-top: 2.75rem;
+		margin-top: 24px;
+	}
+
+	.about-page__meta {
+		grid-template-columns: 1fr 1fr;
+		gap: 1.5rem;
+	}
+}
+
+@media (max-width: 520px) {
+	.about-page__meta {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.about-page__reveal,
+	.about-page__main {
+		animation: none;
+		opacity: 1;
+		filter: none;
+		transform: none;
+		border-top-color: var(--color-line);
+	}
+
+	.mask-text__inner {
+		transform: none !important;
+		transition: none !important;
+	}
+
+	.about-page__value--link::after {
+		transition: none;
+		transform: scaleX(1);
+		opacity: 0;
+	}
+
+	.about-page__value--link:hover::after {
+		opacity: 1;
+	}
 }
 
 /* ——— Project detail page (fallback) ——— */
@@ -798,49 +1041,21 @@ button {
 
 @media (max-width: 860px) {
 	.folio__stage {
-		height: 100svh;
-		min-height: 100svh;
-		padding: 0;
-		place-items: stretch;
-	}
-
-	.folio__track-wrap {
-		height: 100%;
-		width: 100%;
-		gap: 0;
-		justify-content: center;
-	}
-
-	.folio__track,
-	.folio__track.is-vertical {
-		height: 100%;
-		max-height: 100svh;
-		overflow-x: hidden;
-		overflow-y: auto;
-		overscroll-behavior-y: contain;
-		touch-action: pan-y;
+		padding: 5.25rem 0 5.25rem;
 	}
 
 	.folio__track-inner {
-		--folio-strip-w: min(13rem, 56vw);
-		--folio-strip-h: min(44svh, 23.5rem);
-		flex-direction: column;
-		align-items: center;
-		justify-content: flex-start;
-		width: 100%;
-		gap: 0.75rem;
-		min-height: unset;
-		padding: max(5.75rem, calc((100svh - var(--folio-strip-h)) / 2)) 0;
-	}
-
-	.folio__strip {
-		width: var(--folio-strip-w);
-		min-width: var(--folio-strip-w);
-		height: var(--folio-strip-h);
+		--folio-strip-w: min(11.5rem, 46vw);
+		--folio-strip-h: min(44svh, 24rem);
+		gap: 0.65rem;
 	}
 
 	.folio__float-title {
-		display: none;
+		min-height: 2rem;
+	}
+
+	.folio__float-name {
+		font-size: clamp(1.45rem, 7vw, 2.1rem);
 	}
 
 	.folio__detail {
@@ -874,5 +1089,9 @@ button {
 	.folio__detail.is-swap-out .folio__detail-content,
 	.folio__detail.is-swap-in .folio__detail-content {
 		animation-duration: 0.01ms !important;
+	}
+
+	.folio__strip img {
+		transform: none !important;
 	}
 }

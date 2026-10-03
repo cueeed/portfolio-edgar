@@ -1,0 +1,80 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import MaskText from '../components/MaskText.astro';
+
+const email = 'edgar.cuenot@gmail.com';
+const linkedin = 'https://www.linkedin.com/in/edgarcuenot/';
+---
+
+<BaseLayout
+	title="Edgar — À propos"
+	description="Digital designer basé à Morteau — identités, expériences web et direction visuelle."
+>
+	<div class="about-page">
+		<header class="about-page__chrome">
+			<span class="folio__brand folio__brand--ghost" aria-hidden="true">Edgar</span>
+			<MaskText text="Projets" class="folio__link" href="/" style="--mask-delay: 70ms" />
+		</header>
+
+		<main class="about-page__main">
+			<aside class="about-page__meta">
+				<div class="about-page__block about-page__reveal" style="--reveal-delay: 80ms">
+					<p class="about-page__label">Location</p>
+					<p class="about-page__value">Morteau, France</p>
+				</div>
+
+				<div class="about-page__block about-page__reveal" style="--reveal-delay: 180ms">
+					<p class="about-page__label">Contact</p>
+					<a class="about-page__value about-page__value--link" href={`mailto:${email}`}>
+						{email}
+					</a>
+					<a
+						class="about-page__value about-page__value--link"
+						href={linkedin}
+						target="_blank"
+						rel="noopener noreferrer"
+					>
+						LinkedIn
+					</a>
+				</div>
+			</aside>
+
+			<section class="about-page__bio" aria-labelledby="about-lead">
+				<h1 id="about-lead" class="about-page__lead about-page__reveal" style="--reveal-delay: 260ms">
+					Je conçois des identités et des expériences web claires, soignées et mémorables.
+				</h1>
+				<div class="about-page__body about-page__reveal" style="--reveal-delay: 420ms">
+					<p>
+						Digital designer basé à Morteau, j’accompagne marques, studios et entrepreneurs
+						du concept au détail. Chaque projet part d’un besoin précis et d’une intention
+						visuelle forte.
+					</p>
+				</div>
+				<a
+					class="folio__cta about-page__cta about-page__reveal"
+					href="/"
+					style="--reveal-delay: 560ms"
+				>
+					Mes projets
+				</a>
+			</section>
+		</main>
+	</div>
+
+	<script>
+		function replayAboutReveals() {
+			document
+				.querySelectorAll<HTMLElement>('.about-page__reveal, .about-page__main')
+				.forEach((el) => {
+					el.style.animation = 'none';
+					void el.offsetWidth;
+					el.style.animation = '';
+				});
+		}
+
+		replayAboutReveals();
+		document.addEventListener('astro:page-load', () => {
+			if (document.querySelector('.about-page')) replayAboutReveals();
+		});
+	</script>
+</BaseLayout>
