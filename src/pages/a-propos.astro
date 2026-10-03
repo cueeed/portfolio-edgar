@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import MaskText from '../components/MaskText.astro';
 
 const email = 'edgar.cuenot@gmail.com';
 const linkedin = 'https://www.linkedin.com/in/edgarcuenot/';
@@ -8,12 +7,11 @@ const linkedin = 'https://www.linkedin.com/in/edgarcuenot/';
 
 <BaseLayout
 	title="Edgar — À propos"
-	description="Digital designer basé à Morteau — identités, expériences web et direction visuelle."
+	description="Digital Designer basé à Morteau — identités, expériences web et direction visuelle."
 >
 	<div class="about-page">
 		<header class="about-page__chrome">
-			<span class="folio__brand folio__brand--ghost" aria-hidden="true">Edgar</span>
-			<MaskText text="Projets" class="folio__link" href="/" style="--mask-delay: 70ms" />
+			<a class="folio__link" href="/">Projets</a>
 		</header>
 
 		<main class="about-page__main">

@@ -1,4 +1,4 @@
-import type { PortfolioProject } from '../components/Portfolio';
+import type { PortfolioProject } from '../types/portfolio';
 
 const servicesPool = [['Webdesign'], ['Branding'], ['Webdesign', 'Branding']];
 

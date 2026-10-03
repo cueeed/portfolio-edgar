@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Portfolio from '../components/Portfolio';
+import Portfolio from '../components/Portfolio.astro';
 import { getHomepageProjects } from '../lib/projects';
 
 const projects = await getHomepageProjects();
@@ -18,6 +18,6 @@ const portfolioProjects = projects.map((project) => ({
 }));
 ---
 
-<BaseLayout title="Edgar — Digital designer">
-	<Portfolio client:load projects={portfolioProjects} />
+<BaseLayout title="Edgar — Digital Designer">
+	<Portfolio projects={portfolioProjects} />
 </BaseLayout>

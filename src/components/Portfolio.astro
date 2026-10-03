@@ -1,0 +1,148 @@
+---
+import type { PortfolioProject } from '../types/portfolio';
+
+interface Props {
+	projects: PortfolioProject[];
+	email?: string;
+}
+
+const { projects, email = 'edgar.cuenot@gmail.com' } = Astro.props;
+const total = projects.length;
+---
+
+<div class="folio" data-email={email}>
+	<header class="folio__chrome folio__chrome--top">
+		<span class="folio__brand-slot" aria-hidden="true"></span>
+
+		<div class="folio__pager" aria-live="polite">
+			{
+				total > 0 ? (
+					<>
+						<span>01</span>
+						<span class="folio__pager-sep" aria-hidden="true">
+							/
+						</span>
+						<span>{String(total).padStart(2, '0')}</span>
+					</>
+				) : (
+					<span>—</span>
+				)
+			}
+		</div>
+
+		<a class="folio__link" href="/a-propos">À propos</a>
+	</header>
+
+	<main class="folio__stage">
+		{
+			total === 0 ? (
+				<p class="folio__empty">Aucun projet publié. Lance le Studio pour en créer.</p>
+			) : (
+				<div class="folio__track-wrap">
+					<div class="folio__track" aria-label="Projets — glisser pour parcourir">
+						<div class="folio__track-inner">
+							{projects.map((project, i) => (
+								<button
+									type="button"
+									data-project-strip
+									data-id={project.id}
+									data-title={project.title}
+									data-date={project.dateLabel}
+									data-services={project.services.join(' · ')}
+									data-desc={project.shortDescription}
+									data-cover={project.coverImageUrl}
+									data-cover-alt={project.coverAlt}
+									data-external={project.externalUrl ?? ''}
+									data-index={i}
+									class:list={['folio__strip', { 'is-active': i === 0 }]}
+									aria-label={project.title}
+									aria-current={i === 0 ? 'true' : undefined}
+								>
+									<span class="folio__strip-media">
+										<img
+											src={project.coverImageUrl}
+											alt=""
+											draggable="false"
+											loading={i < 3 ? 'eager' : 'lazy'}
+											width="700"
+											height="1100"
+										/>
+									</span>
+								</button>
+							))}
+						</div>
+					</div>
+
+					<p class="folio__float-title" aria-hidden="true">
+						<span class="folio__float-mask"></span>
+					</p>
+				</div>
+			)
+		}
+
+		<section
+			class="folio__detail"
+			data-folio-detail
+			hidden
+			aria-modal="true"
+			role="dialog"
+			aria-labelledby="folio-detail-title"
+		>
+			<button
+				type="button"
+				class="folio__link folio__detail-close"
+				data-folio-close
+				aria-label="Fermer"
+			>
+				Fermer
+			</button>
+			<div class="folio__detail-media"></div>
+			<div class="folio__detail-content"></div>
+		</section>
+	</main>
+
+	<footer class="folio__chrome folio__chrome--bottom">
+		<p class="folio__status">Digital designer</p>
+		<div class="folio__contacts">
+			<button
+				type="button"
+				class="folio__link"
+				data-folio-email
+				aria-label={`Copier l’email ${email}`}
+			>
+				Email
+			</button>
+			<a
+				class="folio__link"
+				href="https://www.linkedin.com/in/edgarcuenot/"
+				target="_blank"
+				rel="noopener noreferrer"
+			>
+				LinkedIn
+			</a>
+		</div>
+	</footer>
+</div>
+
+<script>
+	import { bindPortfolio } from '../scripts/portfolio';
+
+	let dispose: (() => void) | undefined;
+
+	function mount() {
+		dispose?.();
+		dispose = undefined;
+		const root = document.querySelector<HTMLElement>('.folio');
+		if (!root) return;
+		dispose = bindPortfolio(root);
+	}
+
+	function unmount() {
+		dispose?.();
+		dispose = undefined;
+	}
+
+	mount();
+	document.addEventListener('astro:page-load', mount);
+	document.addEventListener('astro:before-swap', unmount);
+</script>
