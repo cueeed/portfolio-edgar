@@ -10,7 +10,11 @@ type ProjectRow = {
 
 type Notice = {tone: 'positive' | 'critical' | 'caution'; text: string} | null
 
-export function BulkDeleteProjects() {
+type Props = {
+  onBack?: () => void
+}
+
+export function BulkDeleteProjects({onBack}: Props) {
   const client = useClient({apiVersion: '2026-03-01'})
   const [projects, setProjects] = useState<ProjectRow[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -23,7 +27,7 @@ export function BulkDeleteProjects() {
     setNotice(null)
     try {
       const rows = await client.fetch<ProjectRow[]>(
-        `*[_type == "project"] | order(title asc) { _id, title }`,
+        `*[_type == "project" && !(_id in path("drafts.**"))] | order(coalesce(orderRank, "~"), title asc) { _id, title }`,
       )
       setProjects(rows)
       setSelected(new Set())
@@ -100,15 +104,20 @@ export function BulkDeleteProjects() {
   return (
     <Card height="fill" padding={4} sizing="border" overflow="auto">
       <Stack space={4}>
-        <Stack space={2}>
-          <Text size={3} weight="semibold">
-            Supprimer des projets
-          </Text>
-          <Text muted size={1}>
-            Coche plusieurs projets puis supprime-les en une fois. Ensuite, utilise « Mettre en
-            ligne » pour mettre à jour le site.
-          </Text>
-        </Stack>
+        <Flex align="flex-start" justify="space-between" gap={3} wrap="wrap">
+          <Stack space={2} style={{flex: 1, minWidth: 16 * 12}}>
+            <Text size={3} weight="semibold">
+              Supprimer des projets
+            </Text>
+            <Text muted size={1}>
+              Coche les projets à retirer, confirme, puis utilise « Mettre en ligne » pour
+              actualiser le site.
+            </Text>
+          </Stack>
+          {onBack && (
+            <Button text="Retour à la liste" mode="ghost" onClick={onBack} disabled={deleting} />
+          )}
+        </Flex>
 
         {notice && (
           <Card padding={3} radius={2} tone={notice.tone} border>
@@ -129,7 +138,12 @@ export function BulkDeleteProjects() {
             disabled={selectedCount === 0 || deleting}
             onClick={() => void deleteSelected()}
           />
-          <Button text="Actualiser" mode="bleed" disabled={loading || deleting} onClick={() => void load()} />
+          <Button
+            text="Actualiser"
+            mode="bleed"
+            disabled={loading || deleting}
+            onClick={() => void load()}
+          />
         </Flex>
 
         {loading ? (
@@ -148,7 +162,6 @@ export function BulkDeleteProjects() {
         ) : (
           <Stack space={2}>
             {projects.map((project) => {
-              const isDraft = project._id.startsWith('drafts.')
               const checked = selected.has(project._id)
               const label = project.title?.trim() || 'Sans titre'
               return (
@@ -163,9 +176,6 @@ export function BulkDeleteProjects() {
                     <Box flex={1}>
                       <Text size={1} weight="medium">
                         <label htmlFor={`project-${project._id}`}>{label}</label>
-                      </Text>
-                      <Text muted size={0}>
-                        {isDraft ? 'Brouillon' : 'Publié'}
                       </Text>
                     </Box>
                   </Flex>

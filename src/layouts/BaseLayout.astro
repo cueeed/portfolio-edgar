@@ -36,20 +36,26 @@ const {
 			href="/"
 			aria-label="Edgar — retour aux projets"
 			transition:persist="site-brand"
-			transition:name="brand"
 		>
 			Edgar
 		</a>
 		<slot />
 		<script>
-			function bindSiteBrand() {
-				const brands = document.querySelectorAll<HTMLAnchorElement>('.site-brand');
-				brands.forEach((el, index) => {
-					if (index > 0) el.remove();
+			function dedupeSiteBrand() {
+				const brands = [...document.querySelectorAll<HTMLAnchorElement>('.site-brand')];
+				if (brands.length <= 1) return;
+				const kept =
+					brands.find((el) => el.dataset.bound === '1') ?? brands[0];
+				brands.forEach((el) => {
+					if (el !== kept) el.remove();
 				});
+			}
 
+			function bindSiteBrand() {
+				dedupeSiteBrand();
 				const brand = document.querySelector<HTMLAnchorElement>('.site-brand');
-				if (!brand || brand.dataset.bound === '1') return;
+				if (!brand) return;
+				if (brand.dataset.bound === '1') return;
 				brand.dataset.bound = '1';
 				brand.addEventListener('click', (event) => {
 					const path = window.location.pathname.replace(/\/$/, '') || '/';
@@ -61,6 +67,10 @@ const {
 			}
 
 			bindSiteBrand();
+			document.addEventListener('astro:after-swap', () => {
+				dedupeSiteBrand();
+				bindSiteBrand();
+			});
 			document.addEventListener('astro:page-load', bindSiteBrand);
 		</script>
 	</body>

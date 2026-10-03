@@ -10,7 +10,8 @@ const linkedin = 'https://www.linkedin.com/in/edgarcuenot/';
 	description="Digital Designer basé à Morteau — identités, expériences web et direction visuelle."
 >
 	<div class="about-page">
-		<header class="about-page__chrome">
+		<header class="folio__chrome folio__chrome--top">
+			<span class="folio__brand-slot" aria-hidden="true"></span>
 			<a class="folio__link" href="/">Projets</a>
 		</header>
 
@@ -21,7 +22,12 @@ const linkedin = 'https://www.linkedin.com/in/edgarcuenot/';
 					<p class="about-page__value">Morteau, France</p>
 				</div>
 
-				<div class="about-page__block about-page__reveal" style="--reveal-delay: 180ms">
+				<div class="about-page__block about-page__reveal" style="--reveal-delay: 140ms">
+					<p class="about-page__label">Poste actuel</p>
+					<p class="about-page__value">Digital Designer chez Publipresse</p>
+				</div>
+
+				<div class="about-page__block about-page__reveal" style="--reveal-delay: 200ms">
 					<p class="about-page__label">Contact</p>
 					<a class="about-page__value about-page__value--link" href={`mailto:${email}`}>
 						{email}
@@ -39,13 +45,14 @@ const linkedin = 'https://www.linkedin.com/in/edgarcuenot/';
 
 			<section class="about-page__bio" aria-labelledby="about-lead">
 				<h1 id="about-lead" class="about-page__lead about-page__reveal" style="--reveal-delay: 260ms">
-					Je conçois des identités et des expériences web claires, soignées et mémorables.
+					Je conçois des identités et des expériences web claires pensées pour des besoins
+					spécifiques.
 				</h1>
 				<div class="about-page__body about-page__reveal" style="--reveal-delay: 420ms">
 					<p>
-						Digital designer basé à Morteau, j’accompagne marques, studios et entrepreneurs
-						du concept au détail. Chaque projet part d’un besoin précis et d’une intention
-						visuelle forte.
+						Digital Designer basé à Morteau, j’accompagne marques et entreprises du concept au
+						détail. Chaque projet part d’un besoin précis, que je cherche à comprendre en
+						profondeur pour concevoir une réponse visuelle juste, cohérente et sur mesure.
 					</p>
 				</div>
 				<a

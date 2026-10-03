@@ -3,7 +3,7 @@ export interface PortfolioProject {
 	title: string;
 	dateLabel: string;
 	services: string[];
-	shortDescription: string;
+	shortDescription?: string;
 	coverImageUrl: string;
 	coverAlt: string;
 	externalUrl?: string | null;

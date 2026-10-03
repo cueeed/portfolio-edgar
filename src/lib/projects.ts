@@ -12,8 +12,9 @@ export interface SanityProject {
 	services?: string[] | null;
 	coverImage: SanityImageSource;
 	coverAlt: string;
-	shortDescription: string;
+	shortDescription?: string | null;
 	externalUrl?: string | null;
+	orderRank?: string | null;
 }
 
 export interface ProjectCard {
@@ -42,7 +43,8 @@ const projectCardFields = /* groq */ `
   coverImage,
   "coverAlt": coalesce(coverImage.alt, title),
   shortDescription,
-  externalUrl
+  externalUrl,
+  orderRank
 `;
 
 export function formatProjectDate(project: Pick<SanityProject, 'date' | 'year'>): string {
@@ -77,7 +79,7 @@ function toCard(project: SanityProject, index: number): ProjectCard {
 		dateLabel: formatProjectDate(project),
 		year: resolveYear(project),
 		services,
-		shortDescription: project.shortDescription,
+		shortDescription: project.shortDescription?.trim() ?? '',
 		coverImageUrl: urlFor(project.coverImage)
 			.width(900)
 			.height(1400)
@@ -91,10 +93,10 @@ function toCard(project: SanityProject, index: number): ProjectCard {
 	};
 }
 
-/** Tous les projets publiés (grille + getStaticPaths). */
+/** Tous les projets publiés (grille + getStaticPaths), triés par ordre Studio. */
 export async function getProjects(): Promise<ProjectCard[]> {
 	const projects = await sanityClient.fetch<SanityProject[]>(
-		`*[_type == "project" && defined(slug.current) && defined(coverImage)] | order(coalesce(date, string(year) + "-01-01") desc, title asc) {
+		`*[_type == "project" && defined(slug.current) && defined(coverImage)] | order(coalesce(orderRank, "~"), coalesce(date, string(year) + "-01-01") desc, title asc) {
       ${projectCardFields}
     }`,
 	);

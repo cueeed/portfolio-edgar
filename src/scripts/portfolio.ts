@@ -1,6 +1,7 @@
 import gsap from 'gsap';
 
-const DRAG_THRESHOLD = 8;
+const DRAG_THRESHOLD_MOUSE = 8;
+const DRAG_THRESHOLD_TOUCH = 4;
 const VELOCITY_SAMPLES = 5;
 const MOMENTUM_MS = 380;
 const MIN_VELOCITY = 0.05;
@@ -60,8 +61,10 @@ export function bindPortfolio(root: HTMLElement): () => void {
 	const drag = {
 		pointerId: null as number | null,
 		startX: 0,
+		startY: 0,
 		originX: 0,
 		dragging: false,
+		axis: null as null | 'x' | 'y',
 		samples: [] as Array<{ x: number; t: number }>,
 	};
 	const pointer = { x: 0, y: 0, inside: false };
@@ -189,11 +192,15 @@ export function bindPortfolio(root: HTMLElement): () => void {
 			meta.append(row);
 		}
 
-		const desc = document.createElement('p');
-		desc.className = 'folio__detail-desc';
-		desc.textContent = project.shortDescription;
+		detailContent.replaceChildren(indexEl, title, meta);
 
-		detailContent.replaceChildren(indexEl, title, meta, desc);
+		const description = project.shortDescription?.trim();
+		if (description) {
+			const desc = document.createElement('p');
+			desc.className = 'folio__detail-desc';
+			desc.textContent = description;
+			detailContent.append(desc);
+		}
 
 		if (project.externalUrl) {
 			const link = document.createElement('a');
@@ -201,8 +208,7 @@ export function bindPortfolio(root: HTMLElement): () => void {
 			link.href = project.externalUrl;
 			link.target = '_blank';
 			link.rel = 'noopener noreferrer';
-			link.append('Voir le site', Object.assign(document.createElement('span'), { textContent: ' ↗' }));
-			link.querySelector('span')?.setAttribute('aria-hidden', 'true');
+			link.textContent = 'Voir le site';
 			detailContent.append(link);
 		} else {
 			const soon = document.createElement('span');
@@ -516,11 +522,32 @@ export function bindPortfolio(root: HTMLElement): () => void {
 			xState.target + (Math.abs(velocity) > MIN_VELOCITY ? velocity * MOMENTUM_MS * 0.55 : 0),
 		);
 		const index = getCenteredIndex(projected);
-		tweenX(getProjectDest(index), {
-			duration: reduced ? 0.01 : 0.7,
-			ease: 'power3.out',
-		});
 		setActiveStrip(index);
+		const dest = getProjectDest(index);
+		const duration = reduced ? 0.01 : 0.7;
+
+		xState.target = dest;
+		gsap.to(content, {
+			x: dest,
+			duration,
+			ease: 'power3.out',
+			overwrite: true,
+			onUpdate: () => {
+				sampleVelocity();
+				updateMotion();
+				ensureTicker();
+			},
+			onComplete: () => {
+				vel = 0;
+				amount = 0;
+				lastX = dest;
+				xState.current = dest;
+				track.classList.remove('is-moving');
+				setActiveStrip(index);
+				syncParallaxToPosition();
+			},
+		});
+		ensureTicker();
 	};
 
 	const clearHoveredStrip = () => {
@@ -587,19 +614,70 @@ export function bindPortfolio(root: HTMLElement): () => void {
 	const resetDrag = () => {
 		drag.pointerId = null;
 		drag.dragging = false;
+		drag.axis = null;
 		drag.samples = [];
 		track.classList.remove('is-dragging');
+	};
+
+	const dragTo = (x: number) => {
+		const v = clampX(x);
+		xState.target = v;
+		gsap.set(content, { x: v, overwrite: true });
+		sampleVelocity();
+		updateMotion();
+		ensureTicker();
+	};
+
+	const settleDrag = (velocity: number) => {
+		if (isSnapMode()) {
+			snapToNearest(velocity);
+		} else if (Math.abs(velocity) > MIN_VELOCITY) {
+			setX(xState.target + velocity * MOMENTUM_MS);
+		}
+		suppressClick = true;
+		window.setTimeout(() => {
+			suppressClick = false;
+		}, 80);
+	};
+
+	const releasePointer = (pointerId: number) => {
+		try {
+			if (track.hasPointerCapture?.(pointerId)) {
+				track.releasePointerCapture(pointerId);
+			}
+		} catch {
+			/* ignore */
+		}
 	};
 
 	const onPointerDown = (e: PointerEvent) => {
 		if (galleryPaused) return;
 		if (e.pointerType === 'mouse' && e.button !== 0) return;
 
+		// Reprend depuis la position visuelle (pas une tween en cours)
+		gsap.killTweensOf(content);
+		const currentX = Number(gsap.getProperty(content, 'x')) || 0;
+		xState.current = currentX;
+		xState.target = currentX;
+		lastX = currentX;
+		vel = 0;
+
 		drag.pointerId = e.pointerId;
 		drag.startX = e.clientX;
-		drag.originX = xState.target;
+		drag.startY = e.clientY;
+		drag.originX = currentX;
 		drag.dragging = false;
+		drag.axis = null;
 		drag.samples = [{ x: e.clientX, t: performance.now() }];
+
+		// Capture tôt sur touch — sinon iOS vole le geste
+		if (e.pointerType !== 'mouse') {
+			try {
+				track.setPointerCapture(e.pointerId);
+			} catch {
+				/* ignore */
+			}
+		}
 	};
 
 	const onPointerMove = (e: PointerEvent) => {
@@ -613,8 +691,23 @@ export function bindPortfolio(root: HTMLElement): () => void {
 		}
 
 		const dx = e.clientX - drag.startX;
+		const dy = e.clientY - drag.startY;
+		const threshold =
+			e.pointerType === 'mouse' ? DRAG_THRESHOLD_MOUSE : DRAG_THRESHOLD_TOUCH;
+
 		if (!drag.dragging) {
-			if (Math.abs(dx) < DRAG_THRESHOLD) return;
+			if (drag.axis === null) {
+				if (Math.hypot(dx, dy) < threshold) return;
+				drag.axis = Math.abs(dx) >= Math.abs(dy) * 0.85 ? 'x' : 'y';
+				if (drag.axis === 'y') {
+					releasePointer(e.pointerId);
+					resetDrag();
+					return;
+				}
+			} else if (drag.axis === 'y') {
+				return;
+			}
+
 			drag.dragging = true;
 			track.classList.add('is-dragging');
 			clearHoveredStrip();
@@ -627,16 +720,8 @@ export function bindPortfolio(root: HTMLElement): () => void {
 
 		e.preventDefault();
 		pushSample(e.clientX);
-		if (isSnapMode()) {
-			const v = clampX(drag.originX + dx);
-			xState.target = v;
-			gsap.set(content, { x: v, overwrite: true });
-			sampleVelocity();
-			updateMotion();
-			ensureTicker();
-		} else {
-			setX(drag.originX + dx);
-		}
+		// Suivi 1:1 au doigt / souris (pas de tween pendant le drag)
+		dragTo(drag.originX + dx);
 	};
 
 	const endDrag = (e: PointerEvent) => {
@@ -648,23 +733,12 @@ export function bindPortfolio(root: HTMLElement): () => void {
 		const velocity = getVelocity();
 
 		resetDrag();
-
-		try {
-			if (track.hasPointerCapture?.(pointerId)) {
-				track.releasePointerCapture(pointerId);
-			}
-		} catch {
-			/* ignore */
-		}
+		releasePointer(pointerId);
 
 		if (wasDragging) {
-			if (isSnapMode()) {
-				snapToNearest(velocity);
-			} else if (Math.abs(velocity) > MIN_VELOCITY) {
-				setX(xState.target + velocity * MOMENTUM_MS);
-			}
-			suppressClick = true;
-		} else if (!galleryPaused) {
+			settleDrag(velocity);
+		} else if (!galleryPaused && e.pointerType === 'mouse') {
+			// Touch : ouverture via click (évite le double open pointerup+click)
 			const strip = document
 				.elementFromPoint(e.clientX, e.clientY)
 				?.closest<HTMLElement>('[data-project-strip]');
@@ -674,12 +748,21 @@ export function bindPortfolio(root: HTMLElement): () => void {
 			}
 		}
 
-		updateHoveredStrip();
+		// Touch : pas de hover fantôme qui masque l’état actif
+		if (e.pointerType !== 'mouse') {
+			pointer.inside = false;
+			clearHoveredStrip();
+		} else {
+			updateHoveredStrip();
+		}
 	};
 
 	const onLostPointerCapture = (e: PointerEvent) => {
 		if (drag.pointerId !== e.pointerId) return;
+		const wasDragging = drag.dragging;
+		const velocity = getVelocity();
 		resetDrag();
+		if (wasDragging) settleDrag(velocity);
 		updateHoveredStrip();
 	};
 

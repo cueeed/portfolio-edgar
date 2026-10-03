@@ -1,10 +1,13 @@
-import {defineType, defineField} from 'sanity'
+import {orderRankField, orderRankOrdering} from '@sanity/orderable-document-list'
+import {defineField, defineType} from 'sanity'
 
 export const project = defineType({
   name: 'project',
   title: 'Projet',
   type: 'document',
+  orderings: [orderRankOrdering],
   fields: [
+    orderRankField({type: 'project'}),
     defineField({
       name: 'title',
       title: 'Titre',
@@ -15,6 +18,7 @@ export const project = defineType({
       name: 'slug',
       title: 'Slug',
       type: 'slug',
+      description: 'Généré automatiquement à partir du titre.',
       options: {
         source: 'title',
         maxLength: 96,
@@ -49,12 +53,15 @@ export const project = defineType({
       name: 'coverImage',
       title: 'Image',
       type: 'image',
+      description:
+        'Dimensions recommandées : 1200 × 1800 px (portrait, ratio 2:3). Format JPG ou WebP.',
       options: {hotspot: true},
       fields: [
         defineField({
           name: 'alt',
           title: 'Texte alternatif',
           type: 'string',
+          description: 'Courte description de l’image pour l’accessibilité.',
           validation: (rule) => rule.required(),
         }),
       ],
@@ -65,30 +72,19 @@ export const project = defineType({
       title: 'Description courte',
       type: 'text',
       rows: 3,
-      validation: (rule) => rule.required().max(220),
+      description: 'Optionnel. Affichée dans le détail du projet.',
+      validation: (rule) => rule.max(220),
     }),
     defineField({
       name: 'externalUrl',
-      title: 'Lien externe',
+      title: 'Lien du site',
       type: 'url',
-      description: 'URL du bouton « Voir le site » (optionnel).',
+      description: 'Optionnel. URL du bouton « Voir le site ».',
       validation: (rule) =>
         rule.uri({
           scheme: ['http', 'https'],
         }),
     }),
-  ],
-  orderings: [
-    {
-      title: 'Date (récent → ancien)',
-      name: 'dateDesc',
-      by: [{field: 'date', direction: 'desc'}],
-    },
-    {
-      title: 'Titre A→Z',
-      name: 'titleAsc',
-      by: [{field: 'title', direction: 'asc'}],
-    },
   ],
   preview: {
     select: {

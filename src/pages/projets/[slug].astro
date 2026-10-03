@@ -50,13 +50,15 @@ const dateLabel = formatProjectDate(project);
 				{[dateLabel, services.join(' · ')].filter(Boolean).join(' · ')}
 			</p>
 			<h1 class="project-detail__title">{project.title}</h1>
-			<p class="project-detail__lead">{project.shortDescription}</p>
+			{project.shortDescription?.trim() && (
+				<p class="project-detail__lead">{project.shortDescription}</p>
+			)}
 
 			{
 				project.externalUrl && (
 					<p class="project-detail__external">
 						<a href={project.externalUrl} target="_blank" rel="noopener noreferrer">
-							Voir le site ↗
+							Voir le site
 						</a>
 					</p>
 				)

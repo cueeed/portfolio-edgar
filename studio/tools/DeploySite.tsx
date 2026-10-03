@@ -22,7 +22,7 @@ export function DeploySite() {
     }
 
     const confirmed = window.confirm(
-      'Lancer un déploiement Netlify maintenant ?\n\nLe site sera reconstruit avec le contenu Sanity actuel (quelques minutes).',
+      'Mettre le site en ligne maintenant ?\n\nNetlify reconstruit le site avec les projets publiés (1–3 minutes).',
     )
     if (!confirmed) return
 
@@ -55,8 +55,7 @@ export function DeploySite() {
             Mettre en ligne
           </Text>
           <Text muted size={1}>
-            Publie ou modifie autant de projets que tu veux dans Sanity, puis lance un seul
-            déploiement quand tu es prêt.
+            Prépare tes projets, publie-les dans Sanity, puis lance un déploiement Netlify.
           </Text>
         </Stack>
 
@@ -66,11 +65,27 @@ export function DeploySite() {
           </Card>
         )}
 
+        <Card padding={3} radius={2} border>
+          <Stack space={3}>
+            <Text size={1} weight="medium">
+              Étapes
+            </Text>
+            <Text size={1} muted>
+              1. Crée ou modifie un projet (reste en brouillon tant que tu n’as pas publié).
+              <br />
+              2. Clique sur <strong>Publish</strong> en bas à droite du projet.
+              <br />
+              3. Ici, clique sur <strong>Mettre le site en ligne</strong>.
+            </Text>
+          </Stack>
+        </Card>
+
         <Card padding={3} radius={2} tone="primary" border>
           <Stack space={3}>
             <Text size={1}>
-              Le bouton demande à Netlify de reconstruire le site avec le contenu actuel du dataset{' '}
-              <code>production</code>.
+              Astuce : reste sur le mode <strong>Drafts</strong> en haut à droite pour travailler.
+              « Published » sert surtout à prévisualiser la version déjà publiée (souvent en lecture
+              seule).
             </Text>
             <Box>
               <Button
